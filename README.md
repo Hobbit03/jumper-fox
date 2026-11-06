@@ -13,7 +13,11 @@ A tiny one-button neon arcade game. Vanilla HTML, CSS and JavaScript — no fram
 
 ## On a phone
 
-The game is built landscape-first, so on a portrait phone it shows a **ROTATE YOUR PHONE** card with a one-tap **PLAY IN PORTRAIT** fallback. Both layouts are fully playable.
+The game is landscape-first, so on a portrait phone it shows a **ROTATE YOUR PHONE** card with a one-tap **PLAY IN PORTRAIT** option. Both modes are fully playable.
+
+- **Landscape** shows the full 16:9 track.
+- **Portrait** is a real portrait layout, not the landscape view squeezed down: the world re-flows to a narrower, taller camera with the action anchored near the bottom, a full-height neon sky above it, and larger UI built for one thumb.
+- Rotating the phone mid-run re-lays out the world and keeps the run alive.
 
 - Tap anywhere to jump; hold to jump higher; tap again in the air to dash.
 - No page scrolling, zooming or pull-to-refresh: the stage locks to the viewport.

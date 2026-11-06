@@ -7,18 +7,22 @@
 
   const canvas = document.getElementById('game');
   const ctx = canvas.getContext('2d', { alpha: false });
+  const stage = document.getElementById('stage');
 
-  const W = 960;
-  const H = 540;
-  const DPR = 2;
-  canvas.width = W * DPR;
-  canvas.height = H * DPR;
+  // The world is re-laid out for the current screen: 960 wide in landscape,
+  // a narrower, much taller stage in portrait. Physics stay in world units.
+  const LANDSCAPE_W = 960;
+  const PORTRAIT_W = 680;
+  let W = LANDSCAPE_W;
+  let H = 540;
+  let DPR = 2;
+  let portraitLayout = false;
 
-  const GROUND_Y = 440;
   const FOX_W = 80;
   const FOX_H = 60;
-  const FOX_X = 200;
-  const MENU_FOX_X = 92;
+  let GROUND_Y = 440;
+  let FOX_X = 200;
+  let MENU_FOX_X = 92;
   const GRAVITY = 3000;
   const HOLD_GRAVITY = 1850;
   const JUMP_VEL = -820;
@@ -420,6 +424,66 @@
   const floaters = [];
   let lastTime = performance.now();
 
+  /* ---------------- responsive world layout ---------------- */
+
+  function relayout() {
+    const cssW = stage && stage.clientWidth ? stage.clientWidth : window.innerWidth;
+    const cssH = stage && stage.clientHeight ? stage.clientHeight : window.innerHeight;
+    const aspect = Math.max(0.4, cssH / Math.max(1, cssW));
+
+    const prevW = W;
+    const prevGround = GROUND_Y;
+    const prevFoxX = FOX_X;
+
+    portraitLayout = aspect > 1.02;
+
+    // Portrait keeps the same pixel density as landscape but shows a narrower,
+    // much taller slice of the world, so the action sits near the bottom.
+    W = portraitLayout ? PORTRAIT_W : LANDSCAPE_W;
+    H = Math.max(360, Math.round(W * aspect));
+    GROUND_Y = portraitLayout
+      ? H - 150
+      : H - Math.round(clamp(H * 0.185, 88, 160));
+    FOX_X = portraitLayout ? Math.round(W * 0.22) : 200;
+    MENU_FOX_X = portraitLayout ? Math.round(W * 0.14) : 92;
+
+    DPR = portraitLayout ? Math.min(window.devicePixelRatio || 1, 1.6) : 2;
+    canvas.width = Math.round(W * DPR);
+    canvas.height = Math.round(H * DPR);
+
+    // Rescale the live run when the phone rotates so nothing spawns off-screen.
+    const widthChanged = prevW !== W;
+    const groundShift = GROUND_Y - prevGround;
+
+    if (widthChanged) {
+      const oldTrack = Math.max(1, prevW - prevFoxX);
+      const newTrack = Math.max(1, W - FOX_X);
+      const scale = newTrack / oldTrack;
+
+      for (const obstacle of obstacles) {
+        obstacle.x = W - (prevW - obstacle.x) * scale;
+      }
+      for (const particle of particles) {
+        particle.x = W - (prevW - particle.x) * scale;
+      }
+      for (const floater of floaters) {
+        floater.x = W - (prevW - floater.x) * scale;
+      }
+    }
+
+    if (widthChanged || groundShift !== 0) {
+      if (groundShift !== 0) {
+        for (const obstacle of obstacles) {
+          if (obstacle.type === 'bird') obstacle.y += groundShift;
+        }
+      }
+      if (fox.grounded) fox.y = GROUND_Y - FOX_H;
+      else if (groundShift !== 0) fox.y += groundShift;
+    }
+
+    fox.x = FOX_X;
+  }
+
   /* ---------------- small helpers ---------------- */
 
   const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
@@ -706,8 +770,16 @@
     portraitQuery.addListener(updateRotateHint);
   }
 
-  window.addEventListener('resize', updateRotateHint);
-  window.addEventListener('orientationchange', updateRotateHint);
+  function onViewportChange() {
+    relayout();
+    updateRotateHint();
+  }
+
+  window.addEventListener('resize', onViewportChange);
+  window.addEventListener('orientationchange', onViewportChange);
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', onViewportChange);
+  }
 
   /* ---------------- particles ---------------- */
 
@@ -774,7 +846,7 @@
     particles.push({
       type: 'feather',
       x: W + 20,
-      y: rand(70, 390),
+      y: rand(GROUND_Y * 0.1, GROUND_Y - 40),
       vx: rand(-46, -22),
       vy: rand(2, 16),
       gravity: 0,
@@ -915,8 +987,8 @@
     shake = Math.max(shake, 5);
     flash('boost');
     audio.milestone();
-    spawnFeathers(16, rand(260, 700), rand(90, 210));
-    burst(W * 0.5, 170, 14, ['#64f3ff', '#ffd47a', '#ff4f8b']);
+    spawnFeathers(16, rand(W * 0.3, W * 0.92), rand(GROUND_Y - 360, GROUND_Y - 120));
+    burst(W * 0.5, GROUND_Y - 270, 14, ['#64f3ff', '#ffd47a', '#ff4f8b']);
   }
 
   /* ---------------- updating ---------------- */
@@ -1297,9 +1369,9 @@
 
   /* ---------------- backdrop ---------------- */
 
-  const stars = Array.from({ length: 92 }, () => ({
-    x: Math.random() * W,
-    y: Math.random() * 410,
+  const stars = Array.from({ length: 150 }, () => ({
+    nx: Math.random(),
+    ny: Math.random(),
     size: Math.random() < 0.86 ? 1 : 2,
     phase: Math.random() * TAU,
     twinkle: rand(0.5, 2.2),
@@ -1315,18 +1387,19 @@
     ctx.fillStyle = sky;
     ctx.fillRect(0, 0, W, H);
 
+    const starField = GROUND_Y - 24;
     for (const star of stars) {
       const a = 0.2 + 0.65 * (0.5 + 0.5 * Math.sin(time * star.twinkle + star.phase));
       ctx.globalAlpha = a;
       ctx.fillStyle = star.color;
-      ctx.fillRect(star.x, star.y, star.size, star.size);
+      ctx.fillRect(star.nx * W, star.ny * starField, star.size, star.size);
     }
     ctx.globalAlpha = 1;
 
-    // Retro sun.
-    const cx = 772;
-    const cy = 132;
-    const radius = 62;
+    // Retro sun, kept in the upper part of the sky in both layouts.
+    const cx = W * 0.8;
+    const cy = portraitLayout ? H * 0.18 : H * 0.244;
+    const radius = portraitLayout ? 86 : 62;
 
     const glow = ctx.createRadialGradient(cx, cy, 20, cx, cy, 170);
     glow.addColorStop(0, 'rgba(255, 111, 156, 0.24)');
@@ -1622,8 +1695,9 @@
     const alpha = t > dur - 0.35 ? clamp((dur - t) / 0.35, 0, 1) : 1;
 
     ctx.save();
-    ctx.translate(W / 2, 172);
-    ctx.scale(pop, pop);
+    ctx.translate(W / 2, GROUND_Y - 268);
+    const annScale = pop * (portraitLayout ? 1.15 : 1);
+    ctx.scale(annScale, annScale);
     ctx.globalAlpha = alpha;
     ctx.textAlign = 'center';
 
@@ -1661,8 +1735,8 @@
     ctx.save();
     ctx.translate(shakeX, shakeY);
 
-    drawRidge(GROUND_Y - 4, 190, distance * 0.05, '#241040', 'rgba(123, 82, 255, 0.28)');
-    drawRidge(GROUND_Y + 6, 128, distance * 0.12, '#120826', 'rgba(255, 79, 139, 0.3)');
+    drawRidge(GROUND_Y - 4, clamp(H * 0.36, 190, 620), distance * 0.05, '#241040', 'rgba(123, 82, 255, 0.28)');
+    drawRidge(GROUND_Y + 6, clamp(H * 0.24, 128, 420), distance * 0.12, '#120826', 'rgba(255, 79, 139, 0.3)');
 
     drawGround();
 
@@ -1686,6 +1760,7 @@
     requestAnimationFrame(frame);
   }
 
+  relayout();
   updateSoundButton();
   updateBestLabels();
   updateRotateHint();

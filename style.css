@@ -791,3 +791,112 @@ button:focus-visible {
     display: none;
   }
 }
+
+/* ---------- True portrait play layout ---------- */
+/* The canvas covers the whole portrait screen and the game re-lays itself
+   out in JS: narrower track, tall sky, action anchored near the bottom. */
+
+@media (orientation: portrait) and (max-width: 900px) and (pointer: coarse) {
+  #stage {
+    width: 100vw;
+    height: 100vh;
+    height: 100dvh;
+    max-width: none;
+    aspect-ratio: auto;
+    box-shadow: none;
+  }
+
+  #hud {
+    padding-top: max(14px, env(safe-area-inset-top, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+  }
+
+  #score {
+    font-size: clamp(34px, 11vw, 54px);
+  }
+
+  .hud-label {
+    font-size: 11px;
+    letter-spacing: 0.28em;
+  }
+
+  .best-chip,
+  .dash-chip {
+    font-size: 10px;
+  }
+
+  .overlay {
+    padding:
+      max(18px, env(safe-area-inset-top, 0px))
+      max(18px, env(safe-area-inset-right, 0px))
+      max(18px, env(safe-area-inset-bottom, 0px))
+      max(18px, env(safe-area-inset-left, 0px));
+  }
+
+  .panel,
+  .panel-small {
+    width: min(100%, 430px);
+    padding: 26px 24px;
+    border-radius: 22px;
+  }
+
+  .eyebrow {
+    font-size: 10px;
+    letter-spacing: 0.3em;
+  }
+
+  .logo {
+    font-size: clamp(38px, 11.5vw, 56px);
+  }
+
+  .tagline {
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  .controls {
+    margin-top: 1.2em;
+  }
+
+  .control {
+    padding: 0.55em 0.8em;
+    font-size: 10px;
+  }
+
+  .cta {
+    max-width: 320px;
+    min-height: 54px;
+    font-size: 16px;
+  }
+
+  .hint,
+  .menu-best {
+    font-size: 10px;
+  }
+
+  .over-title {
+    font-size: clamp(38px, 12vw, 58px);
+  }
+
+  .result {
+    min-width: 110px;
+  }
+
+  .result strong {
+    font-size: clamp(30px, 9vw, 46px);
+  }
+
+  .results {
+    gap: 18vw;
+    margin-top: 1.4em;
+  }
+
+  .new-best {
+    font-size: 11px;
+  }
+
+  .rotate-card {
+    width: min(100%, 460px);
+  }
+}
