@@ -1,0 +1,17 @@
+{
+  "name": "jumper-fox",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Jumper Fox - a tiny one-button neon arcade game built with vanilla HTML, CSS and JavaScript.",
+  "scripts": {
+    "dev": "node server.js",
+    "start": "node server.js"
+  },
+  "keywords": [
+    "game",
+    "canvas",
+    "arcade",
+    "vanilla-js"
+  ],
+  "license": "MIT"
+}
