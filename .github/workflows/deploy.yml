@@ -1,0 +1,28 @@
+name: Deploy to gh-pages
+
+on:
+  push:
+    branches:
+      - deploy
+
+permissions:
+  contents: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Si tu proyecto necesita build (npm, pnpm, etc.), descomenta y ajusta:
+      # - name: Install and Build
+      #   run: |
+      #     npm ci
+      #     npm run build
+
+      - name: Deploy to gh-pages
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          branch: gh-pages
+          folder: .  # Cambia esto por tu carpeta de salida si haces build (ej: dist, build, out)
