@@ -11,6 +11,17 @@ A tiny one-button neon arcade game. Vanilla HTML, CSS and JavaScript — no fram
 - Procedural synthwave music plays in the background and follows the same sound toggle as the SFX.
 - Your best score is saved in `localStorage`; the sound toggle is remembered too.
 
+## On a phone
+
+The game is built landscape-first, so on a portrait phone it shows a **ROTATE YOUR PHONE** card with a one-tap **PLAY IN PORTRAIT** fallback. Both layouts are fully playable.
+
+- Tap anywhere to jump; hold to jump higher; tap again in the air to dash.
+- No page scrolling, zooming or pull-to-refresh: the stage locks to the viewport.
+- HUD and overlays respect the notch and safe-area insets.
+- Touch targets, score text and the sound button grow on coarse-pointer devices, and the controls show `TAP` instead of `SPACE`.
+- On short landscape screens the start and game-over panels compact themselves so nothing gets clipped.
+- Add it to your home screen for a full-screen, browser-chrome-free run.
+
 ## Run locally with pnpm
 
 ```bash

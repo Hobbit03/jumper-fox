@@ -44,6 +44,8 @@
     retryBtn: document.getElementById('retryBtn'),
     soundBtn: document.getElementById('soundBtn'),
     flash: document.getElementById('flash'),
+    rotateHint: document.getElementById('rotateHint'),
+    portraitBtn: document.getElementById('portraitBtn'),
   };
 
   /* ---------------- persistence ---------------- */
@@ -86,6 +88,11 @@
 
   let best = loadBest();
   let soundOn = loadSound();
+  let portraitDismissed = false;
+
+  const portraitQuery = window.matchMedia
+    ? window.matchMedia('(orientation: portrait) and (max-width: 900px) and (pointer: coarse)')
+    : { matches: false, addEventListener: () => {} };
 
   /* ---------------- tiny synth ---------------- */
 
@@ -452,6 +459,12 @@
     ui.menuBest.textContent = best;
   }
 
+  function updateRotateHint() {
+    const show = state === 'menu' && !portraitDismissed && portraitQuery.matches;
+    ui.rotateHint.classList.toggle('visible', show);
+    ui.rotateHint.setAttribute('aria-hidden', String(!show));
+  }
+
   /* ---------------- run flow ---------------- */
 
   function resetRun() {
@@ -500,6 +513,7 @@
     ui.start.classList.add('is-hidden');
     ui.over.classList.add('is-hidden');
     ui.hud.classList.add('visible');
+    updateRotateHint();
     audio.start();
     music.start();
   }
@@ -608,6 +622,8 @@
   function onPrimaryPress() {
     audio.init();
     audio.resume();
+    // While the portrait hint is up, only its own button starts the game.
+    if (ui.rotateHint.classList.contains('visible')) return;
     if (state === 'menu') {
       startGame();
     } else if (state === 'playing') {
@@ -675,6 +691,23 @@
       music.stop();
     }
   });
+
+  ui.portraitBtn.addEventListener('click', () => {
+    portraitDismissed = true;
+    updateRotateHint();
+    audio.init();
+    audio.click();
+    startGame();
+  });
+
+  if (portraitQuery.addEventListener) {
+    portraitQuery.addEventListener('change', updateRotateHint);
+  } else if (portraitQuery.addListener) {
+    portraitQuery.addListener(updateRotateHint);
+  }
+
+  window.addEventListener('resize', updateRotateHint);
+  window.addEventListener('orientationchange', updateRotateHint);
 
   /* ---------------- particles ---------------- */
 
@@ -1655,6 +1688,7 @@
 
   updateSoundButton();
   updateBestLabels();
+  updateRotateHint();
   setDashReady(true);
   requestAnimationFrame(frame);
 })();
